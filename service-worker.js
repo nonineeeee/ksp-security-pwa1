@@ -1,4 +1,4 @@
-const CACHE='ksp-security-step8-v3-camera-focus';
+const CACHE='ksp-security-step8-v4-rear-camera';
 const FILES=[
   './',
   './index.html',
