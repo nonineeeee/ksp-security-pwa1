@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b1f33">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="高軟保全">
+  <title>高雄軟體園區保全勤務定點簽到系統</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <div class="logo">🛡️</div>
+      <div>
+        <h1>高雄軟體園區<br>保全勤務定點簽到系統</h1>
+        <p>PWA 正式版｜第6步 登入驗證</p>
+      </div>
+    </header>
+
+    <section class="card api-card">
+      <div class="row">
+        <span>API狀態</span>
+        <strong id="apiStatus" class="badge waiting">檢查中</strong>
+      </div>
+    </section>
+
+    <section id="loginView" class="card">
+      <h2>保全人員登入</h2>
+
+      <label for="personId">人員編號</label>
+      <input id="personId" autocomplete="username" placeholder="例如 S001">
+
+      <label for="password">密碼</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="請輸入密碼">
+
+      <button id="loginBtn" class="btn primary">登入系統</button>
+      <div id="loginMessage"></div>
+    </section>
+
+    <section id="dashboardView" class="hidden">
+      <section class="card">
+        <div class="topbar">
+          <div>
+            <div class="eyebrow">目前登入</div>
+            <h2 id="staffLabel">—</h2>
+          </div>
+          <button id="logoutBtn" class="text-btn">登出</button>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <span>人員編號</span>
+            <strong id="staffId">—</strong>
+          </div>
+          <div class="info-item">
+            <span>姓名</span>
+            <strong id="staffName">—</strong>
+          </div>
+          <div class="info-item">
+            <span>今日班別</span>
+            <strong id="todayShift">—</strong>
+          </div>
+          <div class="info-item">
+            <span>勤務日期</span>
+            <strong id="dutyDate">—</strong>
+          </div>
+          <div class="info-item">
+            <span>上班時間</span>
+            <strong id="dutyStart">—</strong>
+          </div>
+          <div class="info-item">
+            <span>下班時間</span>
+            <strong id="dutyEnd">—</strong>
+          </div>
+          <div class="info-item">
+            <span>日期類型</span>
+            <strong id="dutyType">—</strong>
+          </div>
+          <div class="info-item">
+            <span>帳號狀態</span>
+            <strong id="staffStatus">—</strong>
+          </div>
+        </div>
+
+        <div id="dashboardMessage"></div>
+      </section>
+
+      <section class="card next-card">
+        <h2>下一步功能</h2>
+        <p>第7步將在此加入：上班簽到、定點巡查、QR掃描、GPS距離驗證、異常回報及今日紀錄。</p>
+      </section>
+    </section>
+
+    <footer>
+      高雄軟體園區保全勤務定點簽到系統
+    </footer>
+  </main>
+
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
