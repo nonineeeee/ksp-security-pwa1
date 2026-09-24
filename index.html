@@ -19,7 +19,7 @@
   <div class="logo">🛡️</div>
   <div>
     <h1>高雄軟體園區<br>保全勤務定點簽到系統</h1>
-    <p>PWA｜第12步 主管補登審核</p>
+    <p>PWA｜第11步 漏簽補登申請</p>
   </div>
 </header>
 
@@ -37,78 +37,8 @@
   <label>密碼</label>
   <input id="password" type="password" placeholder="請輸入密碼">
   <button id="loginBtn" class="btn primary">登入系統</button>
-  <button id="openSupervisorBtn" class="btn supervisor-outline">主管審核登入</button>
   <div id="loginMessage"></div>
 </section>
-
-
-<section id="supervisorLoginView" class="card hidden">
-  <div class="section-head">
-    <div>
-      <div class="eyebrow">管理功能</div>
-      <h2>主管補登審核登入</h2>
-    </div>
-    <button id="supervisorLoginBackBtn" class="text-btn">返回</button>
-  </div>
-
-  <div class="notice supervisor-notice">
-    主管帳號與保全帳號分開管理。首次啟用請到 Google 試算表「主管帳號」查看 SUP001 的暫時密碼並立即修改。
-  </div>
-
-  <label for="supervisorAccount">主管帳號</label>
-  <input id="supervisorAccount" autocomplete="username" placeholder="例如 SUP001">
-
-  <label for="supervisorPassword">主管密碼</label>
-  <input id="supervisorPassword" type="password" autocomplete="current-password" placeholder="請輸入主管密碼">
-
-  <button id="supervisorLoginBtn" class="btn supervisor-btn">主管登入</button>
-
-  <div id="supervisorLoginMessage"></div>
-</section>
-
-
-<section id="supervisorView" class="hidden">
-  <section class="card">
-    <div class="topbar">
-      <div>
-        <div class="eyebrow">主管審核</div>
-        <h2 id="supervisorLabel">—</h2>
-      </div>
-      <button id="supervisorLogoutBtn" class="text-btn">登出</button>
-    </div>
-
-    <div class="supervisor-summary">
-      <div>
-        <span>待審核</span>
-        <strong id="pendingCount">0</strong>
-      </div>
-      <button id="refreshPendingBtn" class="btn mini-btn">重新整理</button>
-    </div>
-  </section>
-
-  <section class="card">
-    <div class="section-head">
-      <h2>待審核補登申請</h2>
-    </div>
-
-    <div id="pendingMessage"></div>
-    <div id="pendingList" class="supervisor-list"></div>
-  </section>
-
-  <section class="card">
-    <div class="section-head">
-      <h2>最近稽核軌跡</h2>
-      <button id="refreshAuditBtn" class="text-btn">重新整理</button>
-    </div>
-
-    <div class="audit-note">
-      完整稽核資料永久保留於 Google 試算表「補登稽核軌跡」。
-    </div>
-
-    <div id="auditList" class="supervisor-list"></div>
-  </section>
-</section>
-
 
 <section id="mainView" class="hidden">
   <section class="card">
