@@ -1,5 +1,7 @@
 
 let currentStaff=null;
+let supervisorToken='';
+let currentSupervisor=null;
 let scanner=null;
 let scanBusy=false;
 let cameraCaps=null;
@@ -13,6 +15,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(saved)$('personId').value=saved;
 
   $('loginBtn').addEventListener('click',login);
+  $('openSupervisorBtn').addEventListener('click',openSupervisorLogin);
+  $('supervisorLoginBackBtn').addEventListener('click',closeSupervisorLogin);
+  $('supervisorLoginBtn').addEventListener('click',supervisorLogin);
+  $('supervisorLogoutBtn').addEventListener('click',supervisorLogout);
+  $('refreshPendingBtn').addEventListener('click',loadPendingCorrections);
+  $('refreshAuditBtn').addEventListener('click',loadSupervisorAudit);
   $('logoutBtn').addEventListener('click',logout);
   $('clockInBtn').addEventListener('click',clockIn);
   $('patrolBtn').addEventListener('click',openPatrol);
@@ -68,7 +76,7 @@ function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt
 function status(id,msg,type='info'){$(id).innerHTML=msg?`<div class="status ${type}">${esc(msg)}</div>`:'';}
 
 function showView(id){
-  ['mainView','patrolView','recordsView','incidentView','checkoutView','correctionView'].forEach(v=>$(v).classList.add('hidden'));
+  ['mainView','patrolView','recordsView','incidentView','checkoutView','correctionView','supervisorView'].forEach(v=>$(v).classList.add('hidden'));
   $(id).classList.remove('hidden');
   if(id!=='patrolView')stopScanner();
 }
@@ -131,6 +139,428 @@ async function checkApi(){
     b.textContent='未連線';
   }
 }
+
+
+function openSupervisorLogin(){
+  $('loginView')
+    .classList
+    .add('hidden');
+
+  $('supervisorLoginView')
+    .classList
+    .remove('hidden');
+
+  status(
+    'supervisorLoginMessage',
+    '',
+    'info'
+  );
+
+  setTimeout(
+    ()=>{
+      $('supervisorAccount')
+        .focus();
+    },
+    100
+  );
+}
+
+
+function closeSupervisorLogin(){
+  $('supervisorLoginView')
+    .classList
+    .add('hidden');
+
+  $('loginView')
+    .classList
+    .remove('hidden');
+
+  $('supervisorPassword').value='';
+}
+
+
+async function supervisorLogin(){
+  const account=
+    $('supervisorAccount')
+      .value
+      .trim()
+      .toUpperCase();
+
+  const password=
+    $('supervisorPassword')
+      .value
+      .trim();
+
+  if(!account||!password){
+    status(
+      'supervisorLoginMessage',
+      '請輸入主管帳號及密碼。',
+      'warn'
+    );
+    return;
+  }
+
+  const btn=
+    $('supervisorLoginBtn');
+
+  btn.disabled=true;
+  btn.textContent=
+    '主管登入驗證中…';
+
+  try{
+    const r=
+      await apiCall(
+        'supervisorLogin',
+        {
+          account:account,
+          password:password
+        }
+      );
+
+    supervisorToken=
+      r.token;
+
+    currentSupervisor=
+      r.supervisor;
+
+    $('supervisorLabel')
+      .textContent=
+      `${currentSupervisor.name}｜${currentSupervisor.account}`;
+
+    $('supervisorLoginView')
+      .classList
+      .add('hidden');
+
+    $('loginView')
+      .classList
+      .add('hidden');
+
+    $('supervisorView')
+      .classList
+      .remove('hidden');
+
+    $('supervisorPassword').value='';
+
+    await Promise.all([
+      loadPendingCorrections(),
+      loadSupervisorAudit()
+    ]);
+
+  }catch(e){
+    status(
+      'supervisorLoginMessage',
+      e.message,
+      'err'
+    );
+
+  }finally{
+    btn.disabled=false;
+    btn.textContent=
+      '主管登入';
+  }
+}
+
+
+function supervisorLogout(){
+  supervisorToken='';
+  currentSupervisor=null;
+
+  $('supervisorView')
+    .classList
+    .add('hidden');
+
+  $('supervisorLoginView')
+    .classList
+    .add('hidden');
+
+  $('loginView')
+    .classList
+    .remove('hidden');
+
+  $('pendingList').innerHTML='';
+  $('auditList').innerHTML='';
+  $('pendingCount').textContent='0';
+}
+
+
+async function loadPendingCorrections(){
+  if(!supervisorToken){
+    return;
+  }
+
+  const box=
+    $('pendingList');
+
+  box.innerHTML=
+    '<div class="empty">讀取待審核申請中…</div>';
+
+  try{
+    const r=
+      await apiCall(
+        'pendingCorrections',
+        {
+          token:
+            supervisorToken
+        }
+      );
+
+    $('pendingCount')
+      .textContent=
+      String(
+        r.total||0
+      );
+
+    renderPendingCorrections(
+      r.requests||[]
+    );
+
+    status(
+      'pendingMessage',
+      '',
+      'info'
+    );
+
+  }catch(e){
+    if(
+      /登入.*失效|登入.*逾時/
+        .test(e.message)
+    ){
+      supervisorLogout();
+      status(
+        'loginMessage',
+        '主管登入已逾時，請重新登入。',
+        'warn'
+      );
+      return;
+    }
+
+    box.innerHTML=
+      `<div class="empty">${esc(e.message)}</div>`;
+  }
+}
+
+
+function renderPendingCorrections(items){
+  const box=
+    $('pendingList');
+
+  if(!items.length){
+    box.innerHTML=
+      '<div class="empty">目前沒有待審核補登申請。</div>';
+    return;
+  }
+
+  box.innerHTML=
+    items.map(
+      x=>`
+        <div class="review-card" data-request-id="${esc(x.requestId)}">
+          <div class="review-head">
+            <div>
+              <h3>${esc(x.name)}｜${esc(x.correctionType)}補登</h3>
+              <div class="review-id">${esc(x.requestId)}</div>
+            </div>
+            <div class="review-time">${esc(x.requestTime)}</div>
+          </div>
+
+          <div class="review-grid">
+            <div class="review-cell">
+              <span>人員編號</span>
+              <strong>${esc(x.personId)}</strong>
+            </div>
+
+            <div class="review-cell">
+              <span>欲補登時間</span>
+              <strong>${esc(x.requestedDate)} ${esc(x.requestedTime)}</strong>
+            </div>
+
+            <div class="review-cell">
+              <span>巡查點</span>
+              <strong>${esc(x.checkpoint||'—')}</strong>
+            </div>
+
+            <div class="review-cell">
+              <span>申請GPS</span>
+              <strong>${esc(x.requestLatitude||'—')}, ${esc(x.requestLongitude||'—')}</strong>
+            </div>
+          </div>
+
+          <div class="review-reason">${esc(x.reason||'')}</div>
+
+          <textarea
+            class="review-note"
+            data-note-for="${esc(x.requestId)}"
+            placeholder="審核備註；駁回時必填"
+          ></textarea>
+
+          <div class="review-actions">
+            <button
+              class="btn approve-btn"
+              onclick="reviewCorrection('${esc(x.requestId)}','核准')"
+            >核准並寫入正式紀錄</button>
+
+            <button
+              class="btn reject-btn"
+              onclick="reviewCorrection('${esc(x.requestId)}','駁回')"
+            >駁回申請</button>
+          </div>
+        </div>
+      `
+    ).join('');
+}
+
+
+async function reviewCorrection(
+  requestId,
+  decision
+){
+  if(!supervisorToken){
+    return;
+  }
+
+  const noteEl=
+    document.querySelector(
+      `[data-note-for="${CSS.escape(requestId)}"]`
+    );
+
+  const note=
+    noteEl
+      ? noteEl.value.trim()
+      : '';
+
+  if(
+    decision==='駁回' &&
+    note.length<2
+  ){
+    status(
+      'pendingMessage',
+      '駁回申請時請填寫審核備註。',
+      'warn'
+    );
+    return;
+  }
+
+  const question=
+    decision==='核准'
+      ? '確定核准此補登申請？核准後系統會建立正式簽到紀錄，且保留完整稽核軌跡。'
+      : '確定駁回此補登申請？';
+
+  if(
+    !window.confirm(question)
+  ){
+    return;
+  }
+
+  status(
+    'pendingMessage',
+    '正在執行主管審核…',
+    'info'
+  );
+
+  try{
+    const r=
+      await apiCall(
+        'reviewCorrection',
+        {
+          token:
+            supervisorToken,
+          requestId:
+            requestId,
+          decision:
+            decision,
+          note:
+            note
+        }
+      );
+
+    status(
+      'pendingMessage',
+      r.message +
+      (
+        r.officialRecordId
+          ? `\n正式紀錄ID：${r.officialRecordId}`
+          : ''
+      ),
+      'ok'
+    );
+
+    await Promise.all([
+      loadPendingCorrections(),
+      loadSupervisorAudit()
+    ]);
+
+  }catch(e){
+    status(
+      'pendingMessage',
+      e.message,
+      'err'
+    );
+  }
+}
+
+
+async function loadSupervisorAudit(){
+  if(!supervisorToken){
+    return;
+  }
+
+  const box=
+    $('auditList');
+
+  box.innerHTML=
+    '<div class="empty">讀取稽核軌跡中…</div>';
+
+  try{
+    const r=
+      await apiCall(
+        'supervisorAudit',
+        {
+          token:
+            supervisorToken
+        }
+      );
+
+    renderSupervisorAudit(
+      r.audits||[]
+    );
+
+  }catch(e){
+    box.innerHTML=
+      `<div class="empty">${esc(e.message)}</div>`;
+  }
+}
+
+
+function renderSupervisorAudit(items){
+  const box=
+    $('auditList');
+
+  if(!items.length){
+    box.innerHTML=
+      '<div class="empty">尚無補登審核稽核資料。</div>';
+    return;
+  }
+
+  box.innerHTML=
+    items.slice(0,50).map(
+      x=>`
+        <div class="audit-card">
+          <div class="audit-event">${esc(x.event||'稽核事件')}</div>
+
+          <div class="audit-meta">
+            ${esc(x.auditTime||'')}<br>
+            申請：${esc(x.requestId||'')}<br>
+            ${esc(x.personName||'')}（${esc(x.personId||'')}）｜${esc(x.correctionType||'')}｜${esc(x.requestedDate||'')} ${esc(x.requestedTime||'')}<br>
+            狀態：${esc(x.oldStatus||'')} → ${esc(x.newStatus||'')}<br>
+            主管：${esc(x.supervisorName||'')}（${esc(x.supervisorAccount||'')}）
+            ${x.note?`<br>備註：${esc(x.note)}`:''}
+          </div>
+
+          ${x.officialRecordId?`<div class="audit-record">正式紀錄：${esc(x.officialRecordId)}</div>`:''}
+        </div>
+      `
+    ).join('');
+}
+
 
 async function login(){
   const personId=$('personId').value.trim().toUpperCase();
