@@ -1,4 +1,4 @@
-const CACHE='ksp-security-step9-v1-incident';
+const CACHE='ksp-security-step10-v1-checkout';
 const FILES=[
   './',
   './index.html',

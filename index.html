@@ -19,7 +19,7 @@
   <div class="logo">🛡️</div>
   <div>
     <h1>高雄軟體園區<br>保全勤務定點簽到系統</h1>
-    <p>PWA｜第9步 異常事件回報</p>
+    <p>PWA｜第10步 下班簽退</p>
   </div>
 </header>
 
@@ -74,6 +74,10 @@
 
     <button id="recordsBtn" class="tile">
       <span>📋</span><b>今日巡查紀錄</b><small>查看本日巡查</small>
+    </button>
+
+    <button id="checkoutBtn" class="tile wide checkout-tile">
+      <span>🔴</span><b>下班簽退</b><small>勤務完成確認＋GPS</small>
     </button>
   </section>
 </section>
@@ -191,6 +195,76 @@
   <div id="recordsList" class="records-list"></div>
 </section>
 
+
+<section id="checkoutView" class="card hidden">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">勤務結束</div>
+      <h2>下班簽退＋勤務完成確認</h2>
+    </div>
+
+    <button id="checkoutBackBtn" class="text-btn">返回</button>
+  </div>
+
+  <div class="notice">
+    請先確認本班巡查、異常回報及交接事項均已完成，再進行下班簽退。
+  </div>
+
+  <div class="checkout-shift">
+    <div>
+      <span>班別</span>
+      <strong id="checkoutShift">—</strong>
+    </div>
+
+    <div>
+      <span>勤務日期</span>
+      <strong id="checkoutDutyDate">—</strong>
+    </div>
+
+    <div class="checkout-schedule">
+      <span>排定時間</span>
+      <strong id="checkoutSchedule">—</strong>
+    </div>
+  </div>
+
+  <div class="completion-grid">
+    <div class="completion-item">
+      <span>上班簽到</span>
+      <strong id="checkoutClockIn">—</strong>
+    </div>
+
+    <div class="completion-item">
+      <span>巡查次數</span>
+      <strong id="checkoutPatrolCount">0</strong>
+    </div>
+
+    <div class="completion-item">
+      <span>巡查點數</span>
+      <strong id="checkoutPointCount">0</strong>
+    </div>
+
+    <div class="completion-item">
+      <span>異常回報</span>
+      <strong id="checkoutIncidentCount">0</strong>
+    </div>
+  </div>
+
+  <div id="checkoutWarning"></div>
+
+  <label class="confirm-check">
+    <input id="dutyCompleteCheck" type="checkbox">
+    <span>
+      我已確認本班勤務已完成；巡查結果及異常事件均已據實回報，必要交接事項已完成。
+    </span>
+  </label>
+
+  <button id="confirmCheckoutBtn" class="btn checkout-btn">
+    確認勤務完成並下班簽退
+  </button>
+
+  <div id="checkoutMessage"></div>
+</section>
+
 <footer>高雄軟體園區保全勤務定點簽到系統</footer>
 </main>
 
@@ -229,6 +303,28 @@
 
     <div class="modal-actions">
       <button id="incidentDoneBtn" class="btn primary">返回勤務首頁</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="checkoutSuccessModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-scroll">
+      <div class="success-icon checkout-success-icon">✓</div>
+      <h2>下班簽退完成</h2>
+
+      <div class="success-detail">
+        <strong id="checkoutSuccessShift">—</strong>
+        <span id="checkoutSuccessTime">—</span>
+        <span id="checkoutSuccessStats">—</span>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button id="checkoutDoneBtn" class="btn primary">
+        完成並登出
+      </button>
     </div>
   </div>
 </div>

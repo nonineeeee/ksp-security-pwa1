@@ -132,3 +132,120 @@ textarea:focus{
 .warning-success{
   background:#d97706;
 }
+
+
+/* ===== 第10步：下班簽退＋勤務完成確認 ===== */
+
+.checkout-tile{
+  border-color:#7f3b3b;
+  background:
+    linear-gradient(
+      135deg,
+      #341419,
+      #451a1a
+    );
+}
+
+.checkout-shift{
+  margin-top:14px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.checkout-shift > div,
+.completion-item{
+  background:#0a1b2c;
+  border:1px solid #244a6b;
+  border-radius:15px;
+  padding:12px;
+}
+
+.checkout-shift .checkout-schedule{
+  grid-column:1/-1;
+}
+
+.checkout-shift span,
+.completion-item span{
+  display:block;
+  color:#9fb6ca;
+  font-size:12px;
+  margin-bottom:5px;
+}
+
+.checkout-shift strong,
+.completion-item strong{
+  display:block;
+  font-size:16px;
+}
+
+.completion-grid{
+  margin-top:10px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.confirm-check{
+  margin-top:16px;
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:14px;
+  background:#111d29;
+  border:1px solid #36546e;
+  border-radius:16px;
+  font-weight:600;
+  line-height:1.5;
+}
+
+.confirm-check input{
+  width:22px;
+  height:22px;
+  flex:0 0 22px;
+  margin:1px 0 0;
+  accent-color:#22c55e;
+}
+
+.confirm-check span{
+  display:block;
+}
+
+.checkout-btn{
+  background:
+    linear-gradient(
+      135deg,
+      #991b1b,
+      #dc2626
+    );
+}
+
+.checkout-btn:disabled{
+  opacity:.45;
+}
+
+.checkout-success-icon{
+  background:#16a34a;
+}
+
+.checkout-state-done{
+  margin-top:14px;
+  padding:13px;
+  border:1px solid #28794d;
+  border-radius:14px;
+  background:#0c3422;
+  color:#d2f8df;
+  text-align:center;
+  font-weight:800;
+}
+
+@media(max-width:360px){
+  .checkout-shift,
+  .completion-grid{
+    grid-template-columns:1fr;
+  }
+
+  .checkout-shift .checkout-schedule{
+    grid-column:auto;
+  }
+}

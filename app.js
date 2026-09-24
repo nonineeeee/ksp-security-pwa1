@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('patrolBtn').addEventListener('click',openPatrol);
   $('recordsBtn').addEventListener('click',openRecords);
   $('incidentBtn').addEventListener('click',openIncident);
+  $('checkoutBtn').addEventListener('click',openCheckout);
+  $('checkoutBackBtn').addEventListener('click',()=>showView('mainView'));
+  $('confirmCheckoutBtn').addEventListener('click',confirmCheckout);
+  $('checkoutDoneBtn').addEventListener('click',completeCheckoutAndLogout);
   $('incidentBackBtn').addEventListener('click',()=>showView('mainView'));
   $('refreshIncidentsBtn').addEventListener('click',loadTodayIncidents);
   $('submitIncidentBtn').addEventListener('click',submitIncident);
@@ -55,7 +59,7 @@ function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt
 function status(id,msg,type='info'){$(id).innerHTML=msg?`<div class="status ${type}">${esc(msg)}</div>`:'';}
 
 function showView(id){
-  ['mainView','patrolView','recordsView','incidentView'].forEach(v=>$(v).classList.add('hidden'));
+  ['mainView','patrolView','recordsView','incidentView','checkoutView'].forEach(v=>$(v).classList.add('hidden'));
   $(id).classList.remove('hidden');
   if(id!=='patrolView')stopScanner();
 }
@@ -157,7 +161,7 @@ function logout(){
   currentStaff=null;
   stopScanner();
   $('password').value='';
-  ['mainView','patrolView','recordsView','incidentView'].forEach(id=>$(id).classList.add('hidden'));
+  ['mainView','patrolView','recordsView','incidentView','checkoutView'].forEach(id=>$(id).classList.add('hidden'));
   $('loginView').classList.remove('hidden');
 }
 
@@ -599,6 +603,346 @@ function continuePatrol(){
   status('patrolMessage','請掃描下一個巡查點。','info');
   scanBusy=false;
   startScanner();
+}
+
+
+
+let currentDutySummary=null;
+
+async function openCheckout(){
+  showView(
+    'checkoutView'
+  );
+
+  currentDutySummary=null;
+
+  $('dutyCompleteCheck')
+    .checked=false;
+
+  $('confirmCheckoutBtn')
+    .disabled=true;
+
+  status(
+    'checkoutMessage',
+    '正在讀取本班勤務摘要…',
+    'info'
+  );
+
+  $('checkoutWarning')
+    .innerHTML='';
+
+  try{
+    const r=
+      await apiCall(
+        'dutySummary',
+        {
+          personId:
+            currentStaff.personId
+        }
+      );
+
+    currentDutySummary=r;
+
+    renderDutySummary(r);
+
+    status(
+      'checkoutMessage',
+      '',
+      'info'
+    );
+
+  }catch(e){
+    status(
+      'checkoutMessage',
+      e.message,
+      'err'
+    );
+
+    $('confirmCheckoutBtn')
+      .disabled=true;
+  }
+}
+
+
+function renderDutySummary(r){
+  const duty=
+    r.duty||{};
+
+  const s=
+    r.summary||{};
+
+  $('checkoutShift')
+    .textContent=
+    duty.shift||'—';
+
+  $('checkoutDutyDate')
+    .textContent=
+    duty.dutyDate||'—';
+
+  $('checkoutSchedule')
+    .textContent=
+    `${duty.startTime||'—'} ～ ${duty.endTime||'—'}`;
+
+  $('checkoutClockIn')
+    .textContent=
+    s.clockInTime||
+    '未找到';
+
+  $('checkoutPatrolCount')
+    .textContent=
+    String(
+      s.patrolCount||0
+    );
+
+  $('checkoutPointCount')
+    .textContent=
+    String(
+      s.uniquePatrolPointCount||0
+    );
+
+  $('checkoutIncidentCount')
+    .textContent=
+    String(
+      s.incidentCount||0
+    );
+
+  const warnBox=
+    $('checkoutWarning');
+
+  if(
+    s.checkoutDone
+  ){
+    warnBox.innerHTML=
+      `<div class="checkout-state-done">本班已於 ${esc(s.checkoutTime||'')} 完成下班簽退。</div>`;
+
+    $('dutyCompleteCheck')
+      .disabled=true;
+
+    $('confirmCheckoutBtn')
+      .disabled=true;
+
+    $('confirmCheckoutBtn')
+      .textContent=
+      '本班已完成簽退';
+
+    return;
+  }
+
+  $('dutyCompleteCheck')
+    .disabled=false;
+
+  $('confirmCheckoutBtn')
+    .textContent=
+    '確認勤務完成並下班簽退';
+
+  const warnings=[];
+
+  if(
+    !s.hasClockIn
+  ){
+    warnings.push(
+      '系統未找到本班上班簽到紀錄，請確認是否有漏簽情形。'
+    );
+  }
+
+  if(
+    s.earlyCheckout
+  ){
+    warnings.push(
+      `目前尚未到排定下班時間，約提前 ${s.earlyMinutes} 分鐘；如確需提前簽退，仍須確認勤務與交接均已完成。`
+    );
+  }
+
+  if(
+    warnings.length
+  ){
+    warnBox.innerHTML=
+      `<div class="status warn">${warnings.map(esc).join('\n')}</div>`;
+  }else{
+    warnBox.innerHTML=
+      '<div class="status ok">本班勤務摘要已載入，請確認內容後完成簽退。</div>';
+  }
+
+  $('confirmCheckoutBtn')
+    .disabled=
+    !$('dutyCompleteCheck')
+      .checked;
+}
+
+
+document.addEventListener(
+  'change',
+  e=>{
+    if(
+      e.target &&
+      e.target.id===
+        'dutyCompleteCheck'
+    ){
+      const alreadyDone=
+        currentDutySummary &&
+        currentDutySummary.summary &&
+        currentDutySummary.summary.checkoutDone;
+
+      $('confirmCheckoutBtn')
+        .disabled=
+        !e.target.checked ||
+        Boolean(alreadyDone);
+    }
+  }
+);
+
+
+async function confirmCheckout(){
+  if(
+    !currentStaff
+  ){
+    return;
+  }
+
+  if(
+    !$('dutyCompleteCheck')
+      .checked
+  ){
+    status(
+      'checkoutMessage',
+      '請先勾選勤務完成確認。',
+      'warn'
+    );
+    return;
+  }
+
+  const btn=
+    $('confirmCheckoutBtn');
+
+  btn.disabled=true;
+  btn.textContent=
+    '正在取得 GPS…';
+
+  try{
+    const gps=
+      await getGps();
+
+    btn.textContent=
+      '正在送出下班簽退…';
+
+    const r=
+      await apiCall(
+        'checkout',
+        {
+          personId:
+            currentStaff.personId,
+
+          confirmDutyComplete:
+            true,
+
+          latitude:
+            gps.latitude,
+
+          longitude:
+            gps.longitude
+        }
+      );
+
+    $('checkoutSuccessShift')
+      .textContent=
+      `${r.duty.shift}｜${r.duty.dutyDate}`;
+
+    $('checkoutSuccessTime')
+      .textContent=
+      `簽退時間：${r.timestamp}`;
+
+    $('checkoutSuccessStats')
+      .textContent=
+      `巡查 ${r.summary.patrolCount} 次｜${r.summary.uniquePatrolPointCount} 個巡查點｜異常回報 ${r.summary.incidentCount} 件`;
+
+    document
+      .documentElement
+      .style
+      .overflow=
+      'hidden';
+
+    document
+      .body
+      .style
+      .overflow=
+      'hidden';
+
+    $('checkoutSuccessModal')
+      .classList
+      .remove('hidden');
+
+    status(
+      'checkoutMessage',
+      '',
+      'ok'
+    );
+
+  }catch(e){
+    status(
+      'checkoutMessage',
+      e.message,
+      'err'
+    );
+
+    btn.disabled=false;
+    btn.textContent=
+      '確認勤務完成並下班簽退';
+  }
+}
+
+
+function hideCheckoutSuccess(){
+  $('checkoutSuccessModal')
+    .classList
+    .add('hidden');
+
+  document
+    .documentElement
+    .style
+    .overflow=
+    '';
+
+  document
+    .body
+    .style
+    .overflow=
+    '';
+}
+
+
+function completeCheckoutAndLogout(){
+  hideCheckoutSuccess();
+
+  currentDutySummary=null;
+
+  currentStaff=null;
+
+  stopScanner();
+
+  $('password').value='';
+
+  [
+    'mainView',
+    'patrolView',
+    'recordsView',
+    'incidentView',
+    'checkoutView'
+  ].forEach(
+    id=>
+      $(id)
+        .classList
+        .add('hidden')
+  );
+
+  $('loginView')
+    .classList
+    .remove('hidden');
+
+  status(
+    'loginMessage',
+    '本班勤務已完成並成功簽退。',
+    'ok'
+  );
 }
 
 
