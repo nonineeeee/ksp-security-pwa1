@@ -1,70 +1,102 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0b1f33">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="高軟保全">
-  <title>高雄軟體園區保全勤務定點簽到系統</title>
-  <link rel="manifest" href="./manifest.json">
-  <link rel="icon" href="./icon-192.png">
-  <link rel="apple-touch-icon" href="./icon-192.png">
-  <link rel="stylesheet" href="./styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1f33">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="stylesheet" href="./styles.css">
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<title>高雄軟體園區保全勤務定點簽到系統</title>
 </head>
 <body>
 <main class="app">
-  <header class="hero">
-    <div class="logo">🛡️</div>
-    <div>
-      <h1>高雄軟體園區<br>保全勤務定點簽到系統</h1>
-      <p>PWA 正式版｜第6步 登入驗證</p>
-    </div>
-  </header>
 
-  <section class="card api-card">
-    <div class="row">
-      <span>API狀態</span>
-      <strong id="apiStatus" class="badge waiting">檢查中</strong>
-    </div>
-  </section>
+<header class="hero">
+  <div class="logo">🛡️</div>
+  <div>
+    <h1>高雄軟體園區<br>保全勤務定點簽到系統</h1>
+    <p>PWA｜第7步 QR＋GPS</p>
+  </div>
+</header>
 
-  <section id="loginView" class="card">
-    <h2>保全人員登入</h2>
-    <label for="personId">人員編號</label>
-    <input id="personId" autocomplete="username" placeholder="例如 S001">
-    <label for="password">密碼</label>
-    <input id="password" type="password" autocomplete="current-password" placeholder="請輸入密碼">
-    <button id="loginBtn" class="btn primary">登入系統</button>
-    <div id="loginMessage"></div>
-  </section>
+<section class="card api-card">
+  <div class="row">
+    <span>API狀態</span>
+    <strong id="apiStatus" class="badge waiting">檢查中</strong>
+  </div>
+</section>
 
-  <section id="dashboardView" class="hidden">
-    <section class="card">
-      <div class="topbar">
-        <div>
-          <div class="eyebrow">目前登入</div>
-          <h2 id="staffLabel">—</h2>
-        </div>
-        <button id="logoutBtn" class="text-btn">登出</button>
+<section id="loginView" class="card">
+  <h2>保全人員登入</h2>
+  <label>人員編號</label>
+  <input id="personId" placeholder="例如 S001">
+  <label>密碼</label>
+  <input id="password" type="password" placeholder="請輸入密碼">
+  <button id="loginBtn" class="btn primary">登入系統</button>
+  <div id="loginMessage"></div>
+</section>
+
+<section id="mainView" class="hidden">
+  <section class="card">
+    <div class="topbar">
+      <div>
+        <div class="eyebrow">目前登入</div>
+        <h2 id="staffLabel">—</h2>
       </div>
+      <button id="logoutBtn" class="text-btn">登出</button>
+    </div>
 
-      <div class="info-grid">
-        <div class="info-item"><span>人員編號</span><strong id="staffId">—</strong></div>
-        <div class="info-item"><span>姓名</span><strong id="staffName">—</strong></div>
-        <div class="info-item"><span>今日班別</span><strong id="todayShift">—</strong></div>
-        <div class="info-item"><span>勤務日期</span><strong id="dutyDate">—</strong></div>
-        <div class="info-item"><span>上班時間</span><strong id="dutyStart">—</strong></div>
-        <div class="info-item"><span>下班時間</span><strong id="dutyEnd">—</strong></div>
-        <div class="info-item"><span>日期類型</span><strong id="dutyType">—</strong></div>
-        <div class="info-item"><span>帳號狀態</span><strong id="staffStatus">—</strong></div>
-      </div>
-      <div id="dashboardMessage"></div>
-    </section>
+    <div class="info-grid">
+      <div class="info-item"><span>班別</span><strong id="todayShift">—</strong></div>
+      <div class="info-item"><span>勤務日期</span><strong id="dutyDate">—</strong></div>
+      <div class="info-item"><span>上班</span><strong id="dutyStart">—</strong></div>
+      <div class="info-item"><span>下班</span><strong id="dutyEnd">—</strong></div>
+    </div>
+
+    <div id="mainMessage"></div>
   </section>
 
-  <footer>高雄軟體園區保全勤務定點簽到系統</footer>
+  <section class="actions">
+    <button id="clockInBtn" class="tile">
+      <span>🟢</span><b>上班簽到</b><small>GPS定位</small>
+    </button>
+
+    <button id="patrolBtn" class="tile">
+      <span>📷</span><b>定點巡查</b><small>QR＋GPS</small>
+    </button>
+  </section>
+</section>
+
+<section id="patrolView" class="card hidden">
+  <h2>定點巡查</h2>
+  <div class="notice">
+    掃描現場 QR Code，系統將自動辨識巡查點並取得 GPS 驗證距離。
+  </div>
+
+  <div id="reader"></div>
+
+  <div id="pointCard" class="point hidden">
+    <strong id="pointName">—</strong>
+    <small id="pointCode">—</small>
+    <div class="info-grid compact">
+      <div class="info-item"><span>允許距離</span><strong id="maxDistance">—</strong></div>
+      <div class="info-item"><span>GPS精度</span><strong id="gpsAccuracy">—</strong></div>
+    </div>
+  </div>
+
+  <label>無法掃描時手動輸入 QR 識別碼</label>
+  <input id="manualQr" placeholder="例如 KSP-A01">
+  <button id="manualQrBtn" class="btn outline">確認識別碼</button>
+
+  <div id="patrolMessage"></div>
+
+  <button id="backBtn" class="btn dark">返回首頁</button>
+</section>
+
+<footer>高雄軟體園區保全勤務定點簽到系統</footer>
 </main>
 
 <script src="./config.js"></script>
