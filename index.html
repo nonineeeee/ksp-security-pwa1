@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b1f33">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./icon-192.png">
 <link rel="apple-touch-icon" href="./icon-192.png">
@@ -12,92 +13,183 @@
 <title>高雄軟體園區保全勤務定點簽到系統</title>
 </head>
 <body>
+
 <main class="app">
+  <header class="hero">
+    <div class="logo">🛡️</div>
+    <div>
+      <h1>高雄軟體園區<br>保全勤務定點簽到系統</h1>
+      <p>PWA｜第8步 巡查紀錄</p>
+    </div>
+  </header>
 
-<header class="hero">
-  <div class="logo">🛡️</div>
-  <div>
-    <h1>高雄軟體園區<br>保全勤務定點簽到系統</h1>
-    <p>PWA｜第7步 QR＋GPS</p>
-  </div>
-</header>
+  <section class="card api-card">
+    <div class="row">
+      <span>API狀態</span>
+      <strong id="apiStatus" class="badge waiting">檢查中</strong>
+    </div>
+  </section>
 
-<section class="card api-card">
-  <div class="row">
-    <span>API狀態</span>
-    <strong id="apiStatus" class="badge waiting">檢查中</strong>
-  </div>
-</section>
+  <section id="loginView" class="card">
+    <h2>保全人員登入</h2>
 
-<section id="loginView" class="card">
-  <h2>保全人員登入</h2>
-  <label>人員編號</label>
-  <input id="personId" placeholder="例如 S001">
-  <label>密碼</label>
-  <input id="password" type="password" placeholder="請輸入密碼">
-  <button id="loginBtn" class="btn primary">登入系統</button>
-  <div id="loginMessage"></div>
-</section>
+    <label>人員編號</label>
+    <input id="personId" placeholder="例如 S001">
 
-<section id="mainView" class="hidden">
-  <section class="card">
-    <div class="topbar">
-      <div>
-        <div class="eyebrow">目前登入</div>
-        <h2 id="staffLabel">—</h2>
+    <label>密碼</label>
+    <input id="password" type="password" placeholder="請輸入密碼">
+
+    <button id="loginBtn" class="btn primary">登入系統</button>
+
+    <div id="loginMessage"></div>
+  </section>
+
+  <section id="mainView" class="hidden">
+
+    <section class="card">
+      <div class="topbar">
+        <div>
+          <div class="eyebrow">目前登入</div>
+          <h2 id="staffLabel">—</h2>
+        </div>
+
+        <button id="logoutBtn" class="text-btn">登出</button>
       </div>
-      <button id="logoutBtn" class="text-btn">登出</button>
-    </div>
 
-    <div class="info-grid">
-      <div class="info-item"><span>班別</span><strong id="todayShift">—</strong></div>
-      <div class="info-item"><span>勤務日期</span><strong id="dutyDate">—</strong></div>
-      <div class="info-item"><span>上班</span><strong id="dutyStart">—</strong></div>
-      <div class="info-item"><span>下班</span><strong id="dutyEnd">—</strong></div>
-    </div>
+      <div class="info-grid">
+        <div class="info-item">
+          <span>班別</span>
+          <strong id="todayShift">—</strong>
+        </div>
 
-    <div id="mainMessage"></div>
+        <div class="info-item">
+          <span>勤務日期</span>
+          <strong id="dutyDate">—</strong>
+        </div>
+
+        <div class="info-item">
+          <span>上班</span>
+          <strong id="dutyStart">—</strong>
+        </div>
+
+        <div class="info-item">
+          <span>下班</span>
+          <strong id="dutyEnd">—</strong>
+        </div>
+      </div>
+
+      <div id="mainMessage"></div>
+    </section>
+
+    <section class="actions">
+
+      <button id="clockInBtn" class="tile">
+        <span>🟢</span>
+        <b>上班簽到</b>
+        <small>GPS定位</small>
+      </button>
+
+      <button id="patrolBtn" class="tile">
+        <span>📷</span>
+        <b>定點巡查</b>
+        <small>QR＋GPS</small>
+      </button>
+
+      <button id="recordsBtn" class="tile wide">
+        <span>📋</span>
+        <b>今日巡查紀錄</b>
+        <small>查看本日已完成巡查</small>
+      </button>
+
+    </section>
   </section>
 
-  <section class="actions">
-    <button id="clockInBtn" class="tile">
-      <span>🟢</span><b>上班簽到</b><small>GPS定位</small>
-    </button>
+  <section id="patrolView" class="card hidden">
 
-    <button id="patrolBtn" class="tile">
-      <span>📷</span><b>定點巡查</b><small>QR＋GPS</small>
-    </button>
-  </section>
-</section>
-
-<section id="patrolView" class="card hidden">
-  <h2>定點巡查</h2>
-  <div class="notice">
-    掃描現場 QR Code，系統將自動辨識巡查點並取得 GPS 驗證距離。
-  </div>
-
-  <div id="reader"></div>
-
-  <div id="pointCard" class="point hidden">
-    <strong id="pointName">—</strong>
-    <small id="pointCode">—</small>
-    <div class="info-grid compact">
-      <div class="info-item"><span>允許距離</span><strong id="maxDistance">—</strong></div>
-      <div class="info-item"><span>GPS精度</span><strong id="gpsAccuracy">—</strong></div>
+    <div class="section-head">
+      <h2>定點巡查</h2>
+      <button id="patrolBackTopBtn" class="text-btn">返回</button>
     </div>
-  </div>
 
-  <label>無法掃描時手動輸入 QR 識別碼</label>
-  <input id="manualQr" placeholder="例如 KSP-A01">
-  <button id="manualQrBtn" class="btn outline">確認識別碼</button>
+    <div class="notice">
+      掃描現場 QR Code 後，系統會取得 GPS 並驗證距離。
+      同一巡查點完成後 10 分鐘內不可重複簽到。
+    </div>
 
-  <div id="patrolMessage"></div>
+    <div id="reader"></div>
 
-  <button id="backBtn" class="btn dark">返回首頁</button>
-</section>
+    <div id="pointCard" class="point hidden">
+      <strong id="pointName">—</strong>
+      <small id="pointCode">—</small>
 
-<footer>高雄軟體園區保全勤務定點簽到系統</footer>
+      <div class="info-grid compact">
+        <div class="info-item">
+          <span>允許距離</span>
+          <strong id="maxDistance">—</strong>
+        </div>
+
+        <div class="info-item">
+          <span>GPS精度</span>
+          <strong id="gpsAccuracy">—</strong>
+        </div>
+      </div>
+    </div>
+
+    <label>無法掃描時手動輸入 QR 識別碼</label>
+    <input id="manualQr" placeholder="例如 KSP-A01">
+
+    <button id="manualQrBtn" class="btn outline">確認識別碼</button>
+
+    <div id="patrolMessage"></div>
+
+    <button id="backBtn" class="btn dark">返回首頁</button>
+
+  </section>
+
+  <section id="recordsView" class="card hidden">
+
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">今日勤務</div>
+        <h2>今日巡查紀錄</h2>
+      </div>
+
+      <button id="recordsBackBtn" class="text-btn">返回</button>
+    </div>
+
+    <div class="record-summary">
+      <span id="recordsDate">—</span>
+      <strong id="recordsCount">0 筆</strong>
+    </div>
+
+    <button id="refreshRecordsBtn" class="btn outline">重新整理</button>
+
+    <div id="recordsMessage"></div>
+
+    <div id="recordsList" class="records-list"></div>
+
+  </section>
+
+  <footer>
+    高雄軟體園區保全勤務定點簽到系統
+  </footer>
 </main>
+
+<div id="successModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="success-icon">✓</div>
+    <h2>巡查成功</h2>
+
+    <div class="success-detail">
+      <strong id="successPoint">—</strong>
+      <span id="successDistance">—</span>
+      <span id="successTime">—</span>
+    </div>
+
+    <button id="continuePatrolBtn" class="btn primary">繼續巡查</button>
+    <button id="successHomeBtn" class="btn dark">返回首頁</button>
+  </div>
+</div>
 
 <script src="./config.js"></script>
 <script src="./app.js"></script>
