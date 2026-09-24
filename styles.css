@@ -249,3 +249,82 @@ textarea:focus{
     grid-column:auto;
   }
 }
+
+
+/* ===== 第11步：漏簽補登申請 ===== */
+
+.correction-tile{
+  border-color:#55518a;
+  background:
+    linear-gradient(
+      135deg,
+      #1e1b4b,
+      #312e81
+    );
+}
+
+.correction-notice{
+  border-color:#6d5eb5;
+  background:#211d48;
+}
+
+.form-two{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.correction-submit{
+  background:
+    linear-gradient(
+      135deg,
+      #4f46e5,
+      #7c3aed
+    );
+}
+
+.correction-item{
+  border:1px solid #514b85;
+  background:#17152d;
+  border-radius:16px;
+  padding:14px;
+}
+
+.correction-title{
+  font-weight:900;
+  color:#ddd6fe;
+}
+
+.correction-status{
+  display:inline-block;
+  margin-top:8px;
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+}
+
+.correction-status.pending{
+  background:#4a3510;
+  color:#fde68a;
+}
+
+.correction-status.approved{
+  background:#0c3422;
+  color:#bbf7d0;
+}
+
+.correction-status.rejected{
+  background:#3b1111;
+  color:#fecaca;
+}
+
+.correction-success-icon{
+  background:#4f46e5;
+}
+
+@media(max-width:380px){
+  .form-two{
+    grid-template-columns:1fr;
+  }
+}

@@ -22,6 +22,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('checkoutBackBtn').addEventListener('click',()=>showView('mainView'));
   $('confirmCheckoutBtn').addEventListener('click',confirmCheckout);
   $('checkoutDoneBtn').addEventListener('click',completeCheckoutAndLogout);
+  $('correctionBtn').addEventListener('click',openCorrection);
+  $('correctionBackBtn').addEventListener('click',()=>showView('mainView'));
+  $('correctionType').addEventListener('change',toggleCorrectionCheckpoint);
+  $('submitCorrectionBtn').addEventListener('click',submitCorrection);
+  $('refreshCorrectionsBtn').addEventListener('click',loadMyCorrections);
+  $('correctionDoneBtn').addEventListener('click',()=>{
+    hideCorrectionSuccess();
+    showView('mainView');
+  });
   $('incidentBackBtn').addEventListener('click',()=>showView('mainView'));
   $('refreshIncidentsBtn').addEventListener('click',loadTodayIncidents);
   $('submitIncidentBtn').addEventListener('click',submitIncident);
@@ -59,7 +68,7 @@ function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt
 function status(id,msg,type='info'){$(id).innerHTML=msg?`<div class="status ${type}">${esc(msg)}</div>`:'';}
 
 function showView(id){
-  ['mainView','patrolView','recordsView','incidentView','checkoutView'].forEach(v=>$(v).classList.add('hidden'));
+  ['mainView','patrolView','recordsView','incidentView','checkoutView','correctionView'].forEach(v=>$(v).classList.add('hidden'));
   $(id).classList.remove('hidden');
   if(id!=='patrolView')stopScanner();
 }
@@ -161,7 +170,7 @@ function logout(){
   currentStaff=null;
   stopScanner();
   $('password').value='';
-  ['mainView','patrolView','recordsView','incidentView','checkoutView'].forEach(id=>$(id).classList.add('hidden'));
+  ['mainView','patrolView','recordsView','incidentView','checkoutView','correctionView'].forEach(id=>$(id).classList.add('hidden'));
   $('loginView').classList.remove('hidden');
 }
 
@@ -607,6 +616,372 @@ function continuePatrol(){
 
 
 
+
+async function openCorrection(){
+  showView(
+    'correctionView'
+  );
+
+  $('correctionType').value='';
+  $('correctionCheckpointWrap')
+    .classList
+    .add('hidden');
+  $('correctionReason').value='';
+
+  const now=
+    new Date();
+
+  const yyyy=
+    now.getFullYear();
+
+  const mm=
+    String(
+      now.getMonth()+1
+    ).padStart(2,'0');
+
+  const dd=
+    String(
+      now.getDate()
+    ).padStart(2,'0');
+
+  const hh=
+    String(
+      now.getHours()
+    ).padStart(2,'0');
+
+  const mi=
+    String(
+      now.getMinutes()
+    ).padStart(2,'0');
+
+  $('correctionDate').value=
+    `${yyyy}-${mm}-${dd}`;
+
+  $('correctionTime').value=
+    `${hh}:${mi}`;
+
+  status(
+    'correctionMessage',
+    '',
+    'info'
+  );
+
+  await Promise.all([
+    loadCorrectionCheckpoints(),
+    loadMyCorrections()
+  ]);
+}
+
+
+function toggleCorrectionCheckpoint(){
+  const isPatrol=
+    $('correctionType')
+      .value ===
+    '巡查';
+
+  $('correctionCheckpointWrap')
+    .classList
+    .toggle(
+      'hidden',
+      !isPatrol
+    );
+}
+
+
+async function loadCorrectionCheckpoints(){
+  const select=
+    $('correctionCheckpoint');
+
+  select.innerHTML=
+    '<option value="">請選擇巡查點</option>';
+
+  try{
+    const r=
+      await apiCall(
+        'checkpoints',
+        {}
+      );
+
+    for(
+      const cp of
+      (r.checkpoints||[])
+    ){
+      const op=
+        document.createElement(
+          'option'
+        );
+
+      op.value=
+        cp.checkpointName ||
+        cp.checkpointId;
+
+      op.textContent=
+        `${cp.checkpointId}｜${cp.checkpointName}`;
+
+      select.appendChild(op);
+    }
+
+  }catch(e){}
+}
+
+
+async function submitCorrection(){
+  if(!currentStaff){
+    return;
+  }
+
+  const correctionType=
+    $('correctionType')
+      .value
+      .trim();
+
+  const requestedDate=
+    $('correctionDate')
+      .value
+      .trim();
+
+  const requestedTime=
+    $('correctionTime')
+      .value
+      .trim();
+
+  const checkpoint=
+    $('correctionCheckpoint')
+      .value
+      .trim();
+
+  const reason=
+    $('correctionReason')
+      .value
+      .trim();
+
+  if(!correctionType){
+    status(
+      'correctionMessage',
+      '請選擇補登類型。',
+      'warn'
+    );
+    return;
+  }
+
+  if(
+    !requestedDate ||
+    !requestedTime
+  ){
+    status(
+      'correctionMessage',
+      '請選擇欲補登日期及時間。',
+      'warn'
+    );
+    return;
+  }
+
+  if(
+    correctionType==='巡查' &&
+    !checkpoint
+  ){
+    status(
+      'correctionMessage',
+      '巡查補登必須選擇巡查點。',
+      'warn'
+    );
+    return;
+  }
+
+  if(reason.length<4){
+    status(
+      'correctionMessage',
+      '請填寫較完整的補登原因（至少4個字）。',
+      'warn'
+    );
+    return;
+  }
+
+  const btn=
+    $('submitCorrectionBtn');
+
+  btn.disabled=true;
+  btn.textContent=
+    '正在取得 GPS…';
+
+  try{
+    const gps=
+      await getGps();
+
+    btn.textContent=
+      '正在送出補登申請…';
+
+    const r=
+      await apiCall(
+        'correctionSubmit',
+        {
+          personId:
+            currentStaff.personId,
+
+          correctionType:
+            correctionType,
+
+          requestedDate:
+            requestedDate,
+
+          requestedTime:
+            requestedTime,
+
+          checkpoint:
+            correctionType==='巡查'
+              ? checkpoint
+              : '',
+
+          reason:
+            reason,
+
+          latitude:
+            gps.latitude,
+
+          longitude:
+            gps.longitude
+        }
+      );
+
+    $('correctionSuccessType')
+      .textContent=
+      `${r.correctionType}漏簽補登`;
+
+    $('correctionSuccessId')
+      .textContent=
+      `申請編號：${r.requestId}`;
+
+    $('correctionSuccessWhen')
+      .textContent=
+      `補登時間：${r.requestedDate} ${r.requestedTime}`;
+
+    document
+      .documentElement
+      .style
+      .overflow='hidden';
+
+    document
+      .body
+      .style
+      .overflow='hidden';
+
+    $('correctionSuccessModal')
+      .classList
+      .remove('hidden');
+
+    await loadMyCorrections();
+
+  }catch(e){
+    status(
+      'correctionMessage',
+      e.message,
+      'err'
+    );
+
+  }finally{
+    btn.disabled=false;
+    btn.textContent=
+      '送出補登申請';
+  }
+}
+
+
+function hideCorrectionSuccess(){
+  $('correctionSuccessModal')
+    .classList
+    .add('hidden');
+
+  document
+    .documentElement
+    .style
+    .overflow='';
+
+  document
+    .body
+    .style
+    .overflow='';
+}
+
+
+async function loadMyCorrections(){
+  if(!currentStaff){
+    return;
+  }
+
+  const box=
+    $('correctionList');
+
+  box.innerHTML=
+    '<div class="empty">讀取中…</div>';
+
+  try{
+    const r=
+      await apiCall(
+        'myCorrections',
+        {
+          personId:
+            currentStaff.personId
+        }
+      );
+
+    renderMyCorrections(
+      r.requests||[]
+    );
+
+  }catch(e){
+    box.innerHTML=
+      `<div class="empty">${esc(e.message)}</div>`;
+  }
+}
+
+
+function renderMyCorrections(items){
+  const box=
+    $('correctionList');
+
+  if(!items.length){
+    box.innerHTML=
+      '<div class="empty">尚無補登申請。</div>';
+    return;
+  }
+
+  box.innerHTML=
+    items.map(
+      x=>{
+        const statusText=
+          x.status||'待審核';
+
+        let statusClass=
+          'pending';
+
+        if(statusText==='核准'){
+          statusClass='approved';
+        }else if(
+          statusText==='駁回'
+        ){
+          statusClass='rejected';
+        }
+
+        return `
+          <div class="correction-item">
+            <div class="record-top">
+              <div>
+                <div class="correction-title">${esc(x.correctionType||'補登')}補登</div>
+                <div class="eyebrow">${esc(x.requestedDate||'')} ${esc(x.requestedTime||'')}</div>
+              </div>
+              <div class="record-time">${esc(x.checkpoint||'')}</div>
+            </div>
+
+            <div class="incident-desc">${esc(x.reason||'')}</div>
+
+            <span class="correction-status ${statusClass}">${esc(statusText)}</span>
+          </div>
+        `;
+      }
+    ).join('');
+}
+
+
 let currentDutySummary=null;
 
 async function openCheckout(){
@@ -926,7 +1301,8 @@ function completeCheckoutAndLogout(){
     'patrolView',
     'recordsView',
     'incidentView',
-    'checkoutView'
+    'checkoutView',
+    'correctionView'
   ].forEach(
     id=>
       $(id)

@@ -19,7 +19,7 @@
   <div class="logo">🛡️</div>
   <div>
     <h1>高雄軟體園區<br>保全勤務定點簽到系統</h1>
-    <p>PWA｜第10步 下班簽退</p>
+    <p>PWA｜第11步 漏簽補登申請</p>
   </div>
 </header>
 
@@ -74,6 +74,10 @@
 
     <button id="recordsBtn" class="tile">
       <span>📋</span><b>今日巡查紀錄</b><small>查看本日巡查</small>
+    </button>
+
+    <button id="correctionBtn" class="tile wide correction-tile">
+      <span>📝</span><b>漏簽補登申請</b><small>只能申請，不直接修改紀錄</small>
     </button>
 
     <button id="checkoutBtn" class="tile wide checkout-tile">
@@ -195,6 +199,68 @@
   <div id="recordsList" class="records-list"></div>
 </section>
 
+
+
+<section id="correctionView" class="card hidden">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">紀錄補登</div>
+      <h2>漏簽補登申請</h2>
+    </div>
+    <button id="correctionBackBtn" class="text-btn">返回</button>
+  </div>
+
+  <div class="notice correction-notice">
+    本功能只提出補登申請，不會直接修改或新增正式簽到紀錄。申請送出後須經主管審核。
+  </div>
+
+  <label for="correctionType">補登類型</label>
+  <select id="correctionType">
+    <option value="">請選擇</option>
+    <option value="上班">上班漏簽</option>
+    <option value="巡查">巡查漏簽</option>
+    <option value="下班">下班漏簽</option>
+  </select>
+
+  <div class="form-two">
+    <div>
+      <label for="correctionDate">欲補登日期</label>
+      <input id="correctionDate" type="date">
+    </div>
+
+    <div>
+      <label for="correctionTime">欲補登時間</label>
+      <input id="correctionTime" type="time">
+    </div>
+  </div>
+
+  <div id="correctionCheckpointWrap" class="hidden">
+    <label for="correctionCheckpoint">巡查點</label>
+    <select id="correctionCheckpoint">
+      <option value="">請選擇巡查點</option>
+    </select>
+  </div>
+
+  <label for="correctionReason">補登原因</label>
+  <textarea
+    id="correctionReason"
+    rows="4"
+    placeholder="例如：執行臨時勤務未即時完成手機簽到，事後查核發現漏簽。"
+  ></textarea>
+
+  <button id="submitCorrectionBtn" class="btn correction-submit">
+    送出補登申請
+  </button>
+
+  <div id="correctionMessage"></div>
+
+  <div class="incident-today-head">
+    <h3>我的補登申請</h3>
+    <button id="refreshCorrectionsBtn" class="text-btn">重新整理</button>
+  </div>
+
+  <div id="correctionList" class="records-list"></div>
+</section>
 
 <section id="checkoutView" class="card hidden">
   <div class="section-head">
@@ -324,6 +390,29 @@
     <div class="modal-actions">
       <button id="checkoutDoneBtn" class="btn primary">
         完成並登出
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<div id="correctionSuccessModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-scroll">
+      <div class="success-icon correction-success-icon">✓</div>
+      <h2>補登申請已送出</h2>
+
+      <div class="success-detail">
+        <strong id="correctionSuccessType">—</strong>
+        <span id="correctionSuccessId">—</span>
+        <span id="correctionSuccessWhen">—</span>
+        <span>狀態：待審核</span>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button id="correctionDoneBtn" class="btn primary">
+        返回勤務首頁
       </button>
     </div>
   </div>
