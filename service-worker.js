@@ -1,4 +1,4 @@
-const CACHE='ksp-security-step8-v1';
+const CACHE='ksp-security-step8-v2-mobile-modal';
 const FILES=[
   './',
   './index.html',
@@ -22,8 +22,7 @@ self.addEventListener('activate',e=>{
   e.waitUntil(
     caches.keys()
       .then(keys=>Promise.all(
-        keys
-          .filter(k=>k!==CACHE)
+        keys.filter(k=>k!==CACHE)
           .map(k=>caches.delete(k))
       ))
       .then(()=>self.clients.claim())
@@ -32,7 +31,6 @@ self.addEventListener('activate',e=>{
 
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
-
   const u=new URL(e.request.url);
 
   if(u.origin===self.location.origin){

@@ -19,7 +19,7 @@
     <div class="logo">🛡️</div>
     <div>
       <h1>高雄軟體園區<br>保全勤務定點簽到系統</h1>
-      <p>PWA｜第8步 巡查紀錄</p>
+      <p>PWA｜第8步 手機提示修正版</p>
     </div>
   </header>
 
@@ -32,80 +32,50 @@
 
   <section id="loginView" class="card">
     <h2>保全人員登入</h2>
-
     <label>人員編號</label>
     <input id="personId" placeholder="例如 S001">
-
     <label>密碼</label>
     <input id="password" type="password" placeholder="請輸入密碼">
-
     <button id="loginBtn" class="btn primary">登入系統</button>
-
     <div id="loginMessage"></div>
   </section>
 
   <section id="mainView" class="hidden">
-
     <section class="card">
       <div class="topbar">
         <div>
           <div class="eyebrow">目前登入</div>
           <h2 id="staffLabel">—</h2>
         </div>
-
         <button id="logoutBtn" class="text-btn">登出</button>
       </div>
 
       <div class="info-grid">
-        <div class="info-item">
-          <span>班別</span>
-          <strong id="todayShift">—</strong>
-        </div>
-
-        <div class="info-item">
-          <span>勤務日期</span>
-          <strong id="dutyDate">—</strong>
-        </div>
-
-        <div class="info-item">
-          <span>上班</span>
-          <strong id="dutyStart">—</strong>
-        </div>
-
-        <div class="info-item">
-          <span>下班</span>
-          <strong id="dutyEnd">—</strong>
-        </div>
+        <div class="info-item"><span>班別</span><strong id="todayShift">—</strong></div>
+        <div class="info-item"><span>勤務日期</span><strong id="dutyDate">—</strong></div>
+        <div class="info-item"><span>上班</span><strong id="dutyStart">—</strong></div>
+        <div class="info-item"><span>下班</span><strong id="dutyEnd">—</strong></div>
       </div>
 
       <div id="mainMessage"></div>
     </section>
 
     <section class="actions">
-
       <button id="clockInBtn" class="tile">
-        <span>🟢</span>
-        <b>上班簽到</b>
-        <small>GPS定位</small>
+        <span>🟢</span><b>上班簽到</b><small>GPS定位</small>
       </button>
 
       <button id="patrolBtn" class="tile">
-        <span>📷</span>
-        <b>定點巡查</b>
-        <small>QR＋GPS</small>
+        <span>📷</span><b>定點巡查</b><small>QR＋GPS</small>
       </button>
 
       <button id="recordsBtn" class="tile wide">
-        <span>📋</span>
-        <b>今日巡查紀錄</b>
-        <small>查看本日已完成巡查</small>
+        <span>📋</span><b>今日巡查紀錄</b><small>查看本日已完成巡查</small>
       </button>
-
     </section>
   </section>
 
   <section id="patrolView" class="card hidden">
-
     <div class="section-head">
       <h2>定點巡查</h2>
       <button id="patrolBackTopBtn" class="text-btn">返回</button>
@@ -127,7 +97,6 @@
           <span>允許距離</span>
           <strong id="maxDistance">—</strong>
         </div>
-
         <div class="info-item">
           <span>GPS精度</span>
           <strong id="gpsAccuracy">—</strong>
@@ -137,23 +106,17 @@
 
     <label>無法掃描時手動輸入 QR 識別碼</label>
     <input id="manualQr" placeholder="例如 KSP-A01">
-
     <button id="manualQrBtn" class="btn outline">確認識別碼</button>
-
     <div id="patrolMessage"></div>
-
     <button id="backBtn" class="btn dark">返回首頁</button>
-
   </section>
 
   <section id="recordsView" class="card hidden">
-
     <div class="section-head">
       <div>
         <div class="eyebrow">今日勤務</div>
         <h2>今日巡查紀錄</h2>
       </div>
-
       <button id="recordsBackBtn" class="text-btn">返回</button>
     </div>
 
@@ -163,31 +126,30 @@
     </div>
 
     <button id="refreshRecordsBtn" class="btn outline">重新整理</button>
-
     <div id="recordsMessage"></div>
-
     <div id="recordsList" class="records-list"></div>
-
   </section>
 
-  <footer>
-    高雄軟體園區保全勤務定點簽到系統
-  </footer>
+  <footer>高雄軟體園區保全勤務定點簽到系統</footer>
 </main>
 
-<div id="successModal" class="modal hidden">
+<div id="successModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="successTitle">
   <div class="modal-card">
-    <div class="success-icon">✓</div>
-    <h2>巡查成功</h2>
+    <div class="modal-scroll">
+      <div class="success-icon">✓</div>
+      <h2 id="successTitle">巡查成功</h2>
 
-    <div class="success-detail">
-      <strong id="successPoint">—</strong>
-      <span id="successDistance">—</span>
-      <span id="successTime">—</span>
+      <div class="success-detail">
+        <strong id="successPoint">—</strong>
+        <span id="successDistance">—</span>
+        <span id="successTime">—</span>
+      </div>
     </div>
 
-    <button id="continuePatrolBtn" class="btn primary">繼續巡查</button>
-    <button id="successHomeBtn" class="btn dark">返回首頁</button>
+    <div class="modal-actions">
+      <button id="continuePatrolBtn" class="btn primary">繼續巡查</button>
+      <button id="successHomeBtn" class="btn dark">返回首頁</button>
+    </div>
   </div>
 </div>
 
