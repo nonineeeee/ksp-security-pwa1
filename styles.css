@@ -28,3 +28,107 @@ input{width:100%;padding:14px;border-radius:15px;border:1px solid #315a7f;backgr
 .modal{position:fixed;inset:0;z-index:99999;width:100%;height:100vh;height:100dvh;padding:max(10px,env(safe-area-inset-top)) 12px max(10px,env(safe-area-inset-bottom)) 12px;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;overflow:hidden}
 .modal-card{width:min(100%,420px);max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px);background:#0d2238;border:1px solid #2d638c;border-radius:24px;display:flex;flex-direction:column;overflow:hidden}.modal-scroll{overflow-y:auto;padding:20px 20px 8px;text-align:center}.modal-actions{flex:0 0 auto;padding:8px 20px max(16px,env(safe-area-inset-bottom));border-top:1px solid #244766}.success-icon{width:70px;height:70px;margin:0 auto 10px;display:grid;place-items:center;border-radius:50%;background:#16a34a;font-size:42px;font-weight:900}.success-detail{display:grid;gap:7px;padding:14px;border-radius:16px;background:#0a1b2c}.success-detail strong{font-size:20px}.success-detail span{color:#b9cee0}
 footer{text-align:center;color:#718aa0;font-size:12px;padding:12px}
+
+
+/* ===== 第9步：異常事件回報 ===== */
+
+select,
+textarea{
+  width:100%;
+  padding:14px;
+  border-radius:15px;
+  border:1px solid #315a7f;
+  background:#081a2a;
+  color:#fff;
+  font-size:16px;
+  font-family:inherit;
+  outline:none;
+}
+
+textarea{
+  resize:vertical;
+  min-height:120px;
+  line-height:1.5;
+}
+
+select:focus,
+textarea:focus{
+  border-color:#38bdf8;
+}
+
+.file-input{
+  background:#0a1b2c;
+}
+
+.btn.danger{
+  background:linear-gradient(135deg,#b91c1c,#ef4444);
+}
+
+.photo-preview{
+  margin-top:10px;
+  border:1px solid #315a7f;
+  background:#071521;
+  border-radius:16px;
+  padding:10px;
+}
+
+.photo-preview img{
+  display:block;
+  width:100%;
+  max-height:320px;
+  object-fit:contain;
+  border-radius:12px;
+}
+
+.photo-remove{
+  display:block;
+  margin:8px auto 0;
+}
+
+.incident-today-head{
+  margin-top:22px;
+  padding-top:16px;
+  border-top:1px solid #244766;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.incident-today-head h3{
+  margin:0;
+  font-size:16px;
+}
+
+.incident-item{
+  border:1px solid #624535;
+  border-radius:16px;
+  background:#201713;
+  padding:14px;
+}
+
+.incident-type{
+  font-weight:900;
+  color:#fecaca;
+}
+
+.incident-desc{
+  margin-top:7px;
+  line-height:1.5;
+  color:#e5edf5;
+  white-space:pre-wrap;
+}
+
+.incident-status{
+  display:inline-block;
+  margin-top:8px;
+  font-size:12px;
+  padding:5px 8px;
+  border-radius:999px;
+  background:#4a3510;
+  color:#fde68a;
+}
+
+.warning-success{
+  background:#d97706;
+}

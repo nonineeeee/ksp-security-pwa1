@@ -17,6 +17,16 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('clockInBtn').addEventListener('click',clockIn);
   $('patrolBtn').addEventListener('click',openPatrol);
   $('recordsBtn').addEventListener('click',openRecords);
+  $('incidentBtn').addEventListener('click',openIncident);
+  $('incidentBackBtn').addEventListener('click',()=>showView('mainView'));
+  $('refreshIncidentsBtn').addEventListener('click',loadTodayIncidents);
+  $('submitIncidentBtn').addEventListener('click',submitIncident);
+  $('incidentPhoto').addEventListener('change',handleIncidentPhotoChange);
+  $('removePhotoBtn').addEventListener('click',clearIncidentPhoto);
+  $('incidentDoneBtn').addEventListener('click',()=>{
+    hideIncidentSuccess();
+    showView('mainView');
+  });
   $('refreshRecordsBtn').addEventListener('click',loadTodayRecords);
   $('manualQrBtn').addEventListener('click',()=>processQr($('manualQr').value));
   $('backBtn').addEventListener('click',()=>showView('mainView'));
@@ -45,7 +55,7 @@ function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt
 function status(id,msg,type='info'){$(id).innerHTML=msg?`<div class="status ${type}">${esc(msg)}</div>`:'';}
 
 function showView(id){
-  ['mainView','patrolView','recordsView'].forEach(v=>$(v).classList.add('hidden'));
+  ['mainView','patrolView','recordsView','incidentView'].forEach(v=>$(v).classList.add('hidden'));
   $(id).classList.remove('hidden');
   if(id!=='patrolView')stopScanner();
 }
@@ -147,7 +157,7 @@ function logout(){
   currentStaff=null;
   stopScanner();
   $('password').value='';
-  ['mainView','patrolView','recordsView'].forEach(id=>$(id).classList.add('hidden'));
+  ['mainView','patrolView','recordsView','incidentView'].forEach(id=>$(id).classList.add('hidden'));
   $('loginView').classList.remove('hidden');
 }
 
@@ -221,7 +231,6 @@ async function startScanner(){
     useBarCodeDetectorIfSupported:true
   });
 
-  // 不在這裡額外塞 videoConstraints，避免覆蓋 facingMode。
   const scanConfig={
     fps:15,
     qrbox:qrBoxSize,
@@ -234,7 +243,7 @@ async function startScanner(){
     processQr(text);
   };
 
-  // 1) 最優先：強制後置鏡頭
+  // 第9步沿用目前成功設定：只啟動後置鏡頭。
   try{
     await scanner.start(
       {facingMode:{exact:'environment'}},
@@ -243,15 +252,25 @@ async function startScanner(){
       ()=>{}
     );
 
-    $('cameraStatus').textContent='已使用後置鏡頭';
+    if(!(await verifyRearCamera())){
+      throw new Error('偵測到前置鏡頭');
+    }
+
+    $('cameraStatus').textContent='後置鏡頭已啟動';
     $('cameraControls').classList.remove('hidden');
     await configureCamera();
     return;
 
-  }catch(exactErr){}
+  }catch(e){
+    try{await stopScanner();}catch(x){}
+  }
 
-  // 2) 次優先：偏好後置鏡頭
   try{
+    scanner=new Html5Qrcode('reader',{
+      formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],
+      useBarCodeDetectorIfSupported:true
+    });
+
     await scanner.start(
       {facingMode:'environment'},
       scanConfig,
@@ -259,66 +278,88 @@ async function startScanner(){
       ()=>{}
     );
 
-    $('cameraStatus').textContent='已使用偏好後置鏡頭';
+    if(!(await verifyRearCamera())){
+      throw new Error('偵測到前置鏡頭');
+    }
+
+    $('cameraStatus').textContent='後置鏡頭已啟動';
     $('cameraControls').classList.remove('hidden');
     await configureCamera();
     return;
 
-  }catch(idealErr){}
+  }catch(e){
+    try{await stopScanner();}catch(x){}
+  }
 
-  // 3) 再列舉相機，明確挑 rear/back/environment。
+  // 只有標籤明確為後置鏡頭才採用；不猜測、不退回前置。
   try{
     const cameras=await Html5Qrcode.getCameras();
-    if(!cameras.length)throw new Error('找不到相機');
 
-    const best=chooseBestRearCamera(cameras);
+    const rear=cameras.find(c=>{
+      const label=String(c.label||'').toLowerCase();
+
+      return (
+        /back|rear|environment|後置|背面|後鏡/.test(label) &&
+        !/front|user|facetime|前置|自拍/.test(label)
+      );
+    });
+
+    if(!rear){
+      throw new Error('找不到可辨識的後置鏡頭');
+    }
+
+    scanner=new Html5Qrcode('reader',{
+      formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],
+      useBarCodeDetectorIfSupported:true
+    });
 
     await scanner.start(
-      best.id,
+      rear.id,
       scanConfig,
       onScan,
       ()=>{}
     );
 
-    $('cameraStatus').textContent=`已選用：${best.label||'後置相機'}`;
+    if(!(await verifyRearCamera())){
+      throw new Error('偵測到前置鏡頭');
+    }
+
+    $('cameraStatus').textContent=
+      `後置鏡頭已啟動${rear.label?'｜'+rear.label:''}`;
+
     $('cameraControls').classList.remove('hidden');
     await configureCamera();
-    return;
 
-  }catch(enumErr){
-    $('cameraStatus').textContent='無法開啟後置鏡頭';
+  }catch(e){
+    try{await stopScanner();}catch(x){}
+
+    $('cameraStatus').textContent='後置鏡頭無法啟動';
+
     status(
       'patrolMessage',
-      '無法啟動後置鏡頭。請確認瀏覽器已允許相機權限，或在手機的網站設定中將相機權限重新允許。',
+      '無法啟動後置鏡頭。系統不會切換到前置鏡頭。請確認網站相機權限後再試。',
       'err'
     );
   }
 }
 
-function chooseBestRearCamera(cameras){
-  const scored=cameras.map((c,index)=>{
-    const label=String(c.label||'').toLowerCase();
-    let score=0;
+async function verifyRearCamera(){
+  try{
+    const settings=
+      scanner?.getRunningTrackSettings?.()||{};
 
-    if(/back|rear|environment|後置|背面|後鏡/.test(label))score+=300;
-    if(/main|主鏡|wide/.test(label))score+=80;
+    // 若瀏覽器明確回報 user，即為前鏡頭，拒絕。
+    if(settings.facingMode==='user'){
+      return false;
+    }
 
-    // 避免超廣角、長焦、微距，QR通常主鏡頭更穩。
-    if(/ultra|ultrawide|超廣角/.test(label))score-=120;
-    if(/tele|telephoto|長焦/.test(label))score-=100;
-    if(/macro|微距/.test(label))score-=80;
+    // environment 或未提供 facingMode 時，
+    // 已由 environment 條件／明確後鏡頭ID啟動，可接受。
+    return true;
 
-    // 前置鏡頭大幅扣分。
-    if(/front|user|facetime|前置|自拍/.test(label))score-=500;
-
-    // 某些Android標籤會是 camera2 0 / 1 等，後鏡頭常排前面，給前項小幅加分。
-    score += Math.max(0,20-index);
-
-    return {camera:c,score};
-  });
-
-  scored.sort((a,b)=>b.score-a.score);
-  return scored[0].camera;
+  }catch(e){
+    return true;
+  }
 }
 
 async function configureCamera(){
@@ -559,6 +600,505 @@ function continuePatrol(){
   scanBusy=false;
   startScanner();
 }
+
+
+let incidentPhotoDataUrl='';
+
+async function openIncident(){
+  showView('incidentView');
+
+  status(
+    'incidentMessage',
+    ''
+  );
+
+  clearIncidentForm();
+
+  await Promise.all([
+    loadIncidentCheckpoints(),
+    loadTodayIncidents()
+  ]);
+}
+
+
+async function loadIncidentCheckpoints(){
+  const select=
+    $('incidentCheckpoint');
+
+  select.innerHTML=
+    '<option value="">請選擇（可不選）</option>';
+
+  try{
+    const r=
+      await apiCall(
+        'checkpoints',
+        {}
+      );
+
+    for(
+      const cp of
+      (r.checkpoints||[])
+    ){
+      const option=
+        document.createElement(
+          'option'
+        );
+
+      option.value=
+        cp.checkpointName ||
+        cp.checkpointId;
+
+      option.textContent=
+        `${cp.checkpointId}｜${cp.checkpointName}`;
+
+      select.appendChild(
+        option
+      );
+    }
+
+  }catch(e){
+    status(
+      'incidentMessage',
+      '巡查點清單讀取失敗，可不選巡查點直接回報。',
+      'warn'
+    );
+  }
+}
+
+
+function handleIncidentPhotoChange(e){
+  const file=
+    e.target.files &&
+    e.target.files[0];
+
+  if(!file){
+    clearIncidentPhoto();
+    return;
+  }
+
+  if(
+    !file.type.startsWith(
+      'image/'
+    )
+  ){
+    status(
+      'incidentMessage',
+      '請選擇照片檔案。',
+      'warn'
+    );
+
+    clearIncidentPhoto();
+    return;
+  }
+
+  const reader=
+    new FileReader();
+
+  reader.onload=()=>{
+    $('photoPreview').src=
+      reader.result;
+
+    $('photoPreviewWrap')
+      .classList
+      .remove('hidden');
+  };
+
+  reader.readAsDataURL(
+    file
+  );
+}
+
+
+function clearIncidentPhoto(){
+  incidentPhotoDataUrl='';
+
+  $('incidentPhoto').value=
+    '';
+
+  $('photoPreview').src=
+    '';
+
+  $('photoPreviewWrap')
+    .classList
+    .add('hidden');
+}
+
+
+function clearIncidentForm(){
+  $('incidentCheckpoint').value=
+    '';
+
+  $('incidentType').value=
+    '';
+
+  $('incidentDescription').value=
+    '';
+
+  clearIncidentPhoto();
+}
+
+
+async function compressIncidentPhoto(file){
+  if(!file){
+    return '';
+  }
+
+  const bitmap=
+    await loadImageFile(file);
+
+  const maxSide=1280;
+
+  let width=
+    bitmap.width;
+
+  let height=
+    bitmap.height;
+
+  const scale=
+    Math.min(
+      1,
+      maxSide /
+      Math.max(
+        width,
+        height
+      )
+    );
+
+  width=
+    Math.round(
+      width *
+      scale
+    );
+
+  height=
+    Math.round(
+      height *
+      scale
+    );
+
+  const canvas=
+    document.createElement(
+      'canvas'
+    );
+
+  canvas.width=
+    width;
+
+  canvas.height=
+    height;
+
+  const ctx=
+    canvas.getContext(
+      '2d'
+    );
+
+  ctx.drawImage(
+    bitmap,
+    0,
+    0,
+    width,
+    height
+  );
+
+  return canvas.toDataURL(
+    'image/jpeg',
+    0.68
+  );
+}
+
+
+function loadImageFile(file){
+  return new Promise(
+    (resolve,reject)=>{
+      const reader=
+        new FileReader();
+
+      reader.onerror=()=>{
+        reject(
+          new Error(
+            '照片讀取失敗。'
+          )
+        );
+      };
+
+      reader.onload=()=>{
+        const img=
+          new Image();
+
+        img.onerror=()=>{
+          reject(
+            new Error(
+              '照片格式無法處理。'
+            )
+          );
+        };
+
+        img.onload=()=>{
+          resolve(img);
+        };
+
+        img.src=
+          reader.result;
+      };
+
+      reader.readAsDataURL(
+        file
+      );
+    }
+  );
+}
+
+
+async function submitIncident(){
+  if(!currentStaff){
+    return;
+  }
+
+  const incidentType=
+    $('incidentType')
+      .value
+      .trim();
+
+  const description=
+    $('incidentDescription')
+      .value
+      .trim();
+
+  const checkpoint=
+    $('incidentCheckpoint')
+      .value
+      .trim();
+
+  if(!incidentType){
+    status(
+      'incidentMessage',
+      '請選擇異常類型。',
+      'warn'
+    );
+    return;
+  }
+
+  if(!description){
+    status(
+      'incidentMessage',
+      '請填寫異常說明。',
+      'warn'
+    );
+    return;
+  }
+
+  const btn=
+    $('submitIncidentBtn');
+
+  btn.disabled=
+    true;
+
+  btn.textContent=
+    '異常回報送出中…';
+
+  try{
+    status(
+      'incidentMessage',
+      '正在取得 GPS 位置…',
+      'info'
+    );
+
+    const gps=
+      await getGps();
+
+    const file=
+      $('incidentPhoto')
+        .files &&
+      $('incidentPhoto')
+        .files[0];
+
+    let photoDataUrl='';
+
+    if(file){
+      status(
+        'incidentMessage',
+        '正在壓縮現場照片…',
+        'info'
+      );
+
+      photoDataUrl=
+        await compressIncidentPhoto(
+          file
+        );
+    }
+
+    status(
+      'incidentMessage',
+      '正在送出異常事件…',
+      'info'
+    );
+
+    const r=
+      await apiCall(
+        'incidentSubmit',
+        {
+          personId:
+            currentStaff.personId,
+
+          checkpoint:
+            checkpoint,
+
+          incidentType:
+            incidentType,
+
+          description:
+            description,
+
+          latitude:
+            gps.latitude,
+
+          longitude:
+            gps.longitude,
+
+          photoDataUrl:
+            photoDataUrl
+        }
+      );
+
+    $('incidentSuccessType')
+      .textContent=
+      r.incidentType ||
+      incidentType;
+
+    $('incidentSuccessId')
+      .textContent=
+      `事件編號：${r.eventId}`;
+
+    $('incidentSuccessTime')
+      .textContent=
+      r.timestamp ||
+      '';
+
+    document
+      .documentElement
+      .style
+      .overflow=
+      'hidden';
+
+    document
+      .body
+      .style
+      .overflow=
+      'hidden';
+
+    $('incidentSuccessModal')
+      .classList
+      .remove('hidden');
+
+    clearIncidentForm();
+
+    await loadTodayIncidents();
+
+    status(
+      'incidentMessage',
+      '',
+      'ok'
+    );
+
+  }catch(e){
+    status(
+      'incidentMessage',
+      e.message,
+      'err'
+    );
+
+  }finally{
+    btn.disabled=
+      false;
+
+    btn.textContent=
+      '送出異常回報';
+  }
+}
+
+
+function hideIncidentSuccess(){
+  $('incidentSuccessModal')
+    .classList
+    .add('hidden');
+
+  document
+    .documentElement
+    .style
+    .overflow=
+    '';
+
+  document
+    .body
+    .style
+    .overflow=
+    '';
+}
+
+
+async function loadTodayIncidents(){
+  if(!currentStaff){
+    return;
+  }
+
+  const box=
+    $('incidentList');
+
+  box.innerHTML=
+    '<div class="empty">讀取中…</div>';
+
+  try{
+    const r=
+      await apiCall(
+        'todayIncidents',
+        {
+          personId:
+            currentStaff.personId
+        }
+      );
+
+    renderIncidentList(
+      r.incidents ||
+      []
+    );
+
+  }catch(e){
+    box.innerHTML=
+      `<div class="empty">${esc(e.message)}</div>`;
+  }
+}
+
+
+function renderIncidentList(items){
+  const box=
+    $('incidentList');
+
+  if(!items.length){
+    box.innerHTML=
+      '<div class="empty">今日尚無異常回報。</div>';
+    return;
+  }
+
+  box.innerHTML=
+    items.map(
+      x=>`
+        <div class="incident-item">
+          <div class="record-top">
+            <div>
+              <div class="incident-type">${esc(x.incidentType||'異常事件')}</div>
+              <div class="eyebrow">${esc(x.checkpoint||'未指定位置')}</div>
+            </div>
+            <div class="record-time">${esc((x.dateTime||'').split(' ')[1]||'')}</div>
+          </div>
+
+          <div class="incident-desc">${esc(x.description||'')}</div>
+
+          <span class="incident-status">${esc(x.status||'待處理')}</span>
+        </div>
+      `
+    ).join('');
+}
+
 
 async function openRecords(){
   showView('recordsView');

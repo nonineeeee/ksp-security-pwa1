@@ -19,7 +19,7 @@
   <div class="logo">🛡️</div>
   <div>
     <h1>高雄軟體園區<br>保全勤務定點簽到系統</h1>
-    <p>PWA｜第8步 後置鏡頭修正版</p>
+    <p>PWA｜第9步 異常事件回報</p>
   </div>
 </header>
 
@@ -68,8 +68,12 @@
       <span>📷</span><b>定點巡查</b><small>QR＋GPS</small>
     </button>
 
-    <button id="recordsBtn" class="tile wide">
-      <span>📋</span><b>今日巡查紀錄</b><small>查看本日已完成巡查</small>
+    <button id="incidentBtn" class="tile">
+      <span>⚠️</span><b>異常事件回報</b><small>拍照＋GPS</small>
+    </button>
+
+    <button id="recordsBtn" class="tile">
+      <span>📋</span><b>今日巡查紀錄</b><small>查看本日巡查</small>
     </button>
   </section>
 </section>
@@ -114,6 +118,60 @@
   <button id="backBtn" class="btn dark">返回首頁</button>
 </section>
 
+
+<section id="incidentView" class="card hidden">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">勤務現場</div>
+      <h2>異常事件回報</h2>
+    </div>
+    <button id="incidentBackBtn" class="text-btn">返回</button>
+  </div>
+
+  <div class="notice">
+    發現門禁、消防、設備、照明、環境、人員或車輛等異常時，可立即回報。送出時會取得 GPS 位置。
+  </div>
+
+  <label for="incidentCheckpoint">巡查點／位置</label>
+  <select id="incidentCheckpoint">
+    <option value="">請選擇（可不選）</option>
+  </select>
+
+  <label for="incidentType">異常類型</label>
+  <select id="incidentType">
+    <option value="">請選擇異常類型</option>
+    <option value="門禁異常">門禁異常</option>
+    <option value="消防異常">消防異常</option>
+    <option value="設備異常">設備異常</option>
+    <option value="照明異常">照明異常</option>
+    <option value="環境異常">環境異常</option>
+    <option value="人員／車輛異常">人員／車輛異常</option>
+    <option value="其他">其他</option>
+  </select>
+
+  <label for="incidentDescription">異常說明</label>
+  <textarea id="incidentDescription" rows="5" placeholder="請描述異常位置、現象及目前狀況"></textarea>
+
+  <label for="incidentPhoto">現場照片</label>
+  <input id="incidentPhoto" class="file-input" type="file" accept="image/*" capture="environment">
+
+  <div id="photoPreviewWrap" class="photo-preview hidden">
+    <img id="photoPreview" alt="異常照片預覽">
+    <button id="removePhotoBtn" class="text-btn photo-remove" type="button">移除照片</button>
+  </div>
+
+  <button id="submitIncidentBtn" class="btn danger">送出異常回報</button>
+
+  <div id="incidentMessage"></div>
+
+  <div class="incident-today-head">
+    <h3>今日本人回報</h3>
+    <button id="refreshIncidentsBtn" class="text-btn">重新整理</button>
+  </div>
+
+  <div id="incidentList" class="records-list"></div>
+</section>
+
 <section id="recordsView" class="card hidden">
   <div class="section-head">
     <div>
@@ -151,6 +209,26 @@
     <div class="modal-actions">
       <button id="continuePatrolBtn" class="btn primary">繼續巡查</button>
       <button id="successHomeBtn" class="btn dark">返回首頁</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="incidentSuccessModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-scroll">
+      <div class="success-icon warning-success">!</div>
+      <h2>異常回報完成</h2>
+
+      <div class="success-detail">
+        <strong id="incidentSuccessType">—</strong>
+        <span id="incidentSuccessId">—</span>
+        <span id="incidentSuccessTime">—</span>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button id="incidentDoneBtn" class="btn primary">返回勤務首頁</button>
     </div>
   </div>
 </div>
